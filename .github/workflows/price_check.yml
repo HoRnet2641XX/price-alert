@@ -2,7 +2,7 @@ name: Price Alert
 
 on:
   schedule:
-    - cron: "0 * * * *"   # 毎時間
+    - cron: "0 */3 * * *"   # 毎時間
   workflow_dispatch:
 
 jobs:
