@@ -1,0 +1,10 @@
+products:
+  - name: "Sony WH-1000XM5"
+    target_price: 45000
+    kakaku_rss: "https://kakaku.com/item/K000XXXXX/rss/"
+    amazon:
+      asin: "B0XXXXXXX"
+
+  - name: "LG ウルトラワイド 34インチ"
+    target_price: 98000
+    kakaku_rss: "https://kakaku.com/item/K000YYYYY/rss/"
