@@ -16,7 +16,14 @@ if not LINE_CHANNEL_ACCESS_TOKEN or not LINE_USER_ID:
     raise RuntimeError("LINEのトークンまたはUser IDが設定されていません")
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
 }
 
 PRICE_FILE = "prices.json"
@@ -69,13 +76,44 @@ def get_biccamera(url):
 
 def get_amazon(url):
     r = requests.get(url, headers=HEADERS, timeout=15)
+
+    # Botブロック検知
+    if r.status_code != 200:
+        raise RuntimeError(f"HTTP {r.status_code}")
+
     soup = BeautifulSoup(r.text, "html.parser")
-    name = soup.select_one("#productTitle").text.strip()
-    price_tag = soup.select_one(".a-price-whole")
-    if not price_tag:
-        raise RuntimeError("Amazon価格取得失敗")
-    price = extract_price(price_tag.text)
+
+    # 商品名
+    title = soup.select_one("#productTitle")
+    if not title:
+        raise RuntimeError("商品タイトル取得失敗")
+    name = title.text.strip()
+
+    # 在庫切れ判定
+    availability = soup.select_one("#availability")
+    if availability and "在庫切れ" in availability.text:
+        raise RuntimeError("在庫切れ")
+
+    # 価格セレクタ（優先順）
+    price_selectors = [
+        ".a-price .a-offscreen",     # 通常・セール
+        "#priceblock_ourprice",
+        "#priceblock_dealprice",
+        ".a-price-whole"
+    ]
+
+    price = None
+    for selector in price_selectors:
+        tag = soup.select_one(selector)
+        if tag and tag.text.strip():
+            price = extract_price(tag.text)
+            break
+
+    if price is None:
+        raise RuntimeError("価格取得失敗")
+
     return name, price
+
 
 # =====================
 # 監視商品
